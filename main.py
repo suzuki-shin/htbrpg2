@@ -19,13 +19,33 @@ from model import *
 #
 class Index(webapp.RequestHandler):
   def get(self):
-    name = self.request.get('name')
-    user = User.get_user(name)
+    self.response.out.write('hello')
 
-    self.response.out.write(to_json(user))
+
+class UserPage(webapp.RequestHandler):
+  u"""ユーザーデータを扱う
+  """
+  def get(self):
+    u"""ユーザーデータを返す
+    """
+    name = self.request.get('name')
+    user = User.get_model(name)
+    self.response.out.write(user.to_json())
+
+
+class EntryPage(webapp.RequestHandler):
+  u"""はてぶデータを扱う
+  """
+  def get(self):
+    url = self.request.get('url')
+    entry = Entry.get_model(url)
+    self.response.out.write(entry.title)
+
 
 application = webapp.WSGIApplication(
     [('/', Index),
+     ('/user', UserPage),
+     ('/entry', EntryPage),
     ],
     debug=True)
 
