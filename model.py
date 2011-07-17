@@ -14,7 +14,7 @@ from google.appengine.ext import db
 # import logging
 # import inspect
 #logging.debug(inspect.currentframe().f_lineno)
-
+from datetime import datetime
 
 #
 # Model
@@ -48,18 +48,21 @@ class User(SsModel):
   speed = db.IntegerProperty(default=1)  #  スピード
 
   @classmethod
-  def get_model(cls, name):
+  def get_user(cls, name):
     u"""ユーザー名からユーザーデータを取得する
     """
-    user = cls.all().filter('name =', name).get()
-    if not user:
-      user = cls.add_model(name)
+    users = cls.all().filter('name =', name).fetch(1)
+    print dir(users)
+    if users:
+      user = users[0]
+    else:
+      user = cls.add_user(name)
     user.img = str(user.lv) + '.gif' if user.lv <= 25 else '25.gif'
 
     return user
 
   @classmethod
-  def add_model(cls, name):
+  def add_user(cls, name):
     u"""ユーザーデータを登録する
     """
     user = cls(name = name)
@@ -71,7 +74,7 @@ class User(SsModel):
 class Entry(SsModel):
   u"""はてぶエントリーページ（ダンジョンと見なす）
   """
-  title      = db.StringProperty()  # タイトル
+  title      = db.TextProperty()  # タイトル
   count      = db.IntegerProperty() # ブックマークしている合計ユーザ数
   url        = db.StringProperty(required=True) # ブックマークされているURL
   entry_url  = db.StringProperty(required=True) # はてなブックマークエントリーページのURL
@@ -79,13 +82,17 @@ class Entry(SsModel):
   eid        = db.IntegerProperty()     # エントリーID
 
   @classmethod
-  def get_model(cls, url):
+  def get_entry(cls, url):
     u"""urlからエントリデータを取得する
     """
-    entry = cls.all().filter('url =', url).get() # これがちゃんと動いてない？
-    if not entry:
+    entries = cls.all().filter('url =', url).fetch(1)
+    print dir(entries)
+    if entries:
+      entry = entries[0]
+    else:
+      print 'api'
       htb = cls.get_hatebu_api(url)
-      entry = cls.add_model(htb)
+      entry = cls.add_entry(htb)
 
     return entry
 
@@ -98,9 +105,10 @@ class Entry(SsModel):
     return htb
 
   @classmethod
-  def add_model(cls, htb):
+  def add_entry(cls, htb):
     u"""エントリデータを登録する
     """
+    print htb
     entry = cls(
       title      = htb['title'],
       count      = int(htb['count']),
@@ -110,9 +118,21 @@ class Entry(SsModel):
       eid        = int(htb['eid']),
     )
     entry.put()
+    Bookmark.add_bookmarks(htb['bookmarks'], entry);
 
     return entry
 
+  def explore(self, user):
+    u"""
+    """
+    bookmarks = self.get_bookmarks()
+
+    return bookmarks
+
+  def get_bookmarks(self):
+    u"""
+    """
+    return Bookmark.get_bookmarks(self)
 
 class Bookmark(SsModel):
   u"""はてぶエントリーページについてるブックマーク（モンスターとみなす）
@@ -122,3 +142,28 @@ class Bookmark(SsModel):
   timestamp = db.DateTimeProperty() # ブックマークした時刻。new Date(timestamp) で JavaScript の Date オブジェクトになります
   comment   = db.StringProperty()   # ブックマークコメント
   entry     = db.ReferenceProperty(Entry) # 所属エントリ
+
+  @classmethod
+  def add_bookmarks(cls, bookmarks, entry):
+    u"""ブックマークデータを登録する
+    """
+    for bm in bookmarks:
+      timestamp = datetime.strptime(bm['timestamp'], "%Y/%m/%d %H:%M:%S")
+      bookmark = cls(
+        user      = bm['user'],
+        tags      = bm['tags'],
+        timestamp = timestamp,
+        comment   = bm['comment'],
+        entry     = entry,
+      )
+      bookmark.put()
+
+    return
+
+  @classmethod
+  def get_bookmarks(cls, entry):
+    u"""指定したエントリにひもづくブックマークデータを取得する
+    """
+    bookmarks = cls.all().filter('entry =', entry).fetch(100)
+
+    return json.dumps(bookmarks)

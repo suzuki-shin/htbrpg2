@@ -22,30 +22,50 @@ class Index(webapp.RequestHandler):
     self.response.out.write('hello')
 
 
-class UserPage(webapp.RequestHandler):
+class PageUser(webapp.RequestHandler):
   u"""ユーザーデータを扱う
   """
   def get(self):
     u"""ユーザーデータを返す
     """
     name = self.request.get('name')
-    user = User.get_model(name)
+    user = User.get_user(name)
     self.response.out.write(user.to_json())
 
 
-class EntryPage(webapp.RequestHandler):
+class PageEntry(webapp.RequestHandler):
   u"""はてぶデータを扱う
   """
   def get(self):
     url = self.request.get('url')
-    entry = Entry.get_model(url)
-    self.response.out.write(entry.title)
+    entry = Entry.get_entry(url)
+    dir(entry)
+    self.response.out.write(entry)
 
+class PageEntryExplore(webapp.RequestHandler):
+  u"""そのページのダンジョンを冒険する
+  """
+  def get(self):
+    name = self.request.get('name')
+    user = User.get_user(name)
+    url = self.request.get('url')
+    entry = Entry.get_entry(url)
+    result = entry.explore(user)
+    self.response.out.write(result)
+
+class PageTest(webapp.RequestHandler):
+  u"""テスト用
+  """
+  def get(self):
+    url = self.request.get('url')
+    entry = Entry.get_entry(url)
+    dir(entry)
 
 application = webapp.WSGIApplication(
     [('/', Index),
-     ('/user', UserPage),
-     ('/entry', EntryPage),
+     ('/user', PageUser),
+     ('/entry', PageEntry),
+     ('/test', PageTest),
     ],
     debug=True)
 
