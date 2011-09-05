@@ -1,0 +1,29 @@
+<html>
+  {% include "header.html" %}
+  <body>
+	<div id="container">
+	  <div id="header">
+		<h1><a href="/">GYMMEMO</a></h1>
+	  </div>
+	  <div id="content">
+		<table>
+		  <tr>
+			<th>eid</th>
+			<th>title</th>
+			<th>count</th>
+			<th>url</th>
+		  </tr>
+		  {% for e in entries %}
+		  <tr>
+			<td>{{ e.eid }}</td>
+			<td>{{ e.title }}</td>
+			<td>{{ e.count }}</td>
+			<td>{{ e.url }}</td>
+		  </tr>
+		{% endfor %}
+		</table>
+	  </div>
+	</div>
+	{% include "footer.html" %}
+  </body>
+</html>
