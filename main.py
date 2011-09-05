@@ -22,36 +22,52 @@ class Index(webapp.RequestHandler):
     self.response.out.write('hello')
 
 
-class PageUser(webapp.RequestHandler):
-  u"""ユーザーデータを扱う
-  """
-  def get(self):
-    u"""ユーザーデータを返す
-    """
-    name = self.request.get('name')
-    user = User.get_user(name)
-    self.response.out.write(user.to_json())
+# class PageUser(webapp.RequestHandler):
+#   u"""ユーザーデータを扱う
+#   """
+#   def get(self):
+#     u"""ユーザーデータを返す
+#     """
+#     name = self.request.get('name')
+#     user = User.get_user(name)
+#     self.response.out.write(user.to_json())
 
 
-class PageEntry(webapp.RequestHandler):
-  u"""はてぶデータを扱う
+class HtbApi(webapp.RequestHandler):
+  u"""パラメタで渡したurlのはてぶデータを取得して、EntryテーブルとBookmarkテーブルに格納
   """
   def get(self):
     url = self.request.get('url')
-    entry = Entry.get_entry(url)
-    dir(entry)
-    self.response.out.write(entry)
+    htb = Entry.get_hatebu_api(url)
+#     logging.info(inspect.currentframe().f_lineno)
+#     logging.info(htb['eid'])
+    if (htb):
+      try:
+        entry = Entry.add_entry(htb)
+        print "success"
+      except:
+        print "oops"
 
-class PageEntryExplore(webapp.RequestHandler):
-  u"""そのページのダンジョンを冒険する
+class EntryList(webapp.RequestHandler):
+  u"""ダンジョン一覧を表示
   """
   def get(self):
-    name = self.request.get('name')
-    user = User.get_user(name)
-    url = self.request.get('url')
-    entry = Entry.get_entry(url)
-    result = entry.explore(user)
-    self.response.out.write(result)
+    entries = Entry.all().fetch(20)
+    path = os.path.join(os.path.dirname(__file__), 'entry_list.html')
+    self.response.out.write(template.render(path, {
+      'entries': entries
+    }))
+
+# class PageEntryExplore(webapp.RequestHandler):
+#   u"""そのページのダンジョンを冒険する
+#   """
+#   def get(self):
+#     name = self.request.get('name')
+#     user = User.get_user(name)
+#     url = self.request.get('url')
+#     entry = Entry.get_entry(url)
+#     result = entry.explore(user)
+#     self.response.out.write(result)
 
 class PageTest(webapp.RequestHandler):
   u"""テスト用
@@ -64,7 +80,9 @@ class PageTest(webapp.RequestHandler):
 application = webapp.WSGIApplication(
     [('/', Index),
      ('/user', PageUser),
-     ('/entry', PageEntry),
+     ('/htb_api', HtbApi),
+     ('/entry_list', EntryList),
+#      ('/admin_entry', PageAdminEntry),
      ('/test', PageTest),
     ],
     debug=True)

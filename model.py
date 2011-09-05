@@ -27,15 +27,6 @@ class SsModel(db.Model):
     """
     return json.dumps(dict([(attr, getattr(self, attr)) for attr in self._all_properties]))
 
-#   @classmethod
-#   def add_model(cls, prop):
-#     u"""データを登録する
-#     """
-#     model = cls()
-#     model.put()
-
-#     return model
-
 class User(SsModel):
   u"""ユーザーキャラクターデータ
   """
@@ -82,22 +73,31 @@ class Entry(SsModel):
   eid        = db.IntegerProperty()     # エントリーID
 
   @classmethod
-  def get_entry(cls, url):
+  def get_entry_by_url(cls, url):
     u"""urlからエントリデータを取得する
     """
     entries = cls.all().filter('url =', url).fetch(1)
-    print dir(entries)
-    if entries:
-      entry = entries[0]
-    else:
-      print 'api'
-      htb = cls.get_hatebu_api(url)
-      entry = cls.add_entry(htb)
+#     print dir(entries)
+    if not entries:
+      return None
 
-    return entry
+    return entries[0]
+
+  @classmethod
+  def get_entry_by_eid(cls, eid):
+    u"""eidからエントリデータを取得する
+    """
+    entries = cls.all().filter('eid =', eid).fetch(1)
+    print dir(entries)
+    if not entries:
+      return None
+
+    return entries[0]
 
   @classmethod
   def get_hatebu_api(cls, url):
+    u"""はてぶAPI取得
+    """
     api_url = "http://b.hatena.ne.jp/entry/jsonlite/"
     htb_json = urllib.urlopen(api_url + url).read()
     htb = json.loads(htb_json)
@@ -107,8 +107,11 @@ class Entry(SsModel):
   @classmethod
   def add_entry(cls, htb):
     u"""エントリデータを登録する
+    （すでにそのeidが存在したら例外を送出する）
     """
-    print htb
+    if cls.get_entry_by_eid(int(htb['eid'])):
+      raise "Duplicate Error"
+
     entry = cls(
       title      = htb['title'],
       count      = int(htb['count']),
