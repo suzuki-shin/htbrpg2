@@ -6,3 +6,7 @@ api_version: 1
 handlers:
 - url: .*
   script: main.py
+
+- url: /cron
+  script: main.py
+  login: admin

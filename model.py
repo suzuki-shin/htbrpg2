@@ -88,7 +88,6 @@ class Entry(SsModel):
     u"""eidからエントリデータを取得する
     """
     entries = cls.all().filter('eid =', eid).fetch(1)
-    print dir(entries)
     if not entries:
       return None
 
@@ -170,3 +169,11 @@ class Bookmark(SsModel):
     bookmarks = cls.all().filter('entry =', entry).fetch(100)
 
     return json.dumps(bookmarks)
+
+class Url(SsModel):
+  u"""ダンジョンにするためのurlを入れておく
+  """
+  url = db.LinkProperty(required=True)
+  got = db.BooleanProperty(default=False)
+  created_at = db.DateTimeProperty(auto_now_add=True)
+  got_at = db.DateTimeProperty()
