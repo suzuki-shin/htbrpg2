@@ -22,17 +22,86 @@ class Index(webapp.RequestHandler):
   def get(self):
     self.response.out.write('hello')
 
+class CharaMake(webapp.RequestHandler):
+  u"""キャラメイク
+  """
+  def get(self):
+    path = os.path.join(os.path.dirname(__file__), 'chara_make.html')
+    self.response.out.write(template.render(path, {}))
 
-# class PageUser(webapp.RequestHandler):
-#   u"""ユーザーデータを扱う
-#   """
-#   def get(self):
-#     u"""ユーザーデータを返す
-#     """
-#     name = self.request.get('name')
-#     user = User.get_user(name)
-#     self.response.out.write(user.to_json())
+  def post(self):
+    user = users.get_current_user()
 
+    if not user:
+      self.redirect(users.create_login_url(self.request.uri))
+
+    chara = Chara(
+      user = user,
+      name = self.request.get('name'),
+      sex = int(self.request.get('sex')),
+      job = int(self.request.get('job'))
+    )
+    chara.put()
+
+    self.response.out.write('hello')
+
+class PartyMake(webapp.RequestHandler):
+  u"""パーティメイク
+  """
+  def post(self):
+    logging.info(inspect.currentframe().f_lineno)
+    logging.info(self.request.get('party', allow_multiple=True))
+
+    user = users.get_current_user()
+
+    if not user:
+      self.redirect(users.create_login_url(self.request.uri))
+
+    party_keys = self.request.get('party', allow_multiple = True)
+    logging.info(party_keys)
+
+    if len(party_keys) == 0:
+      self.redirect('/')
+    elif len(party_keys) == 1:
+      party = Party(user = user)
+      party.chara1 = Chara.get(party_keys[0])
+    elif len(party_keys) == 2:
+      party = Party(user = user)
+      party.chara1 = Chara.get(party_keys[0])
+      party.chara2 = Chara.get(party_keys[1])
+    elif len(party_keys) == 3:
+      party = Party(user = user)
+      party.chara1 = Chara.get(party_keys[0])
+      party.chara2 = Chara.get(party_keys[1])
+      party.chara3 = Chara.get(party_keys[2])
+
+    party.put()
+
+    self.response.out.write('hello')
+
+class CharaList(webapp.RequestHandler):
+  u"""キャラ一覧
+  """
+  def get(self):
+    user = users.get_current_user()
+    if not user:
+      self.redirect(users.create_login_url(self.request.uri))
+
+    chara_list = Chara.all().filter('user =', user).fetch(10)
+    path = os.path.join(os.path.dirname(__file__), 'chara_list.html')
+    self.response.out.write(template.render(path, {'chara_list': chara_list}))
+
+class PartyList(webapp.RequestHandler):
+  u"""パーティー一覧
+  """
+  def get(self):
+    user = users.get_current_user()
+    if not user:
+      self.redirect(users.create_login_url(self.request.uri))
+
+    party_list = Party.all().filter('user =', user).fetch(10)
+    path = os.path.join(os.path.dirname(__file__), 'party_list.html')
+    self.response.out.write(template.render(path, {'party_list': party_list}))
 
 class HtbApi(webapp.RequestHandler):
   u"""Urlテーブルから未取得のurlのはてぶデータを取得して、EntryテーブルとBookmarkテーブルに格納
@@ -76,25 +145,11 @@ class EntryList(webapp.RequestHandler):
   def get(self):
     entries = Entry.all().fetch(20)
     path = os.path.join(os.path.dirname(__file__), 'entry_list.html')
-    self.response.out.write(template.render(path, {
-      'entries': entries
-    }))
+    self.response.out.write(template.render(path, {'entries': entries}))
 
 class Cron(webapp.RequestHandler):
   def get(self):
     pass
-
-
-# class PageEntryExplore(webapp.RequestHandler):
-#   u"""そのページのダンジョンを冒険する
-#   """
-#   def get(self):
-#     name = self.request.get('name')
-#     user = User.get_user(name)
-#     url = self.request.get('url')
-#     entry = Entry.get_entry(url)
-#     result = entry.explore(user)
-#     self.response.out.write(result)
 
 class PageTest(webapp.RequestHandler):
   u"""テスト用
@@ -110,7 +165,9 @@ application = webapp.WSGIApplication(
      ('/htb_api', HtbApi),
      ('/htb_url', HtbUrl),
      ('/entry_list', EntryList),
-#      ('/admin_entry', PageAdminEntry),
+     ('/chara_make', CharaMake),
+     ('/chara_list', CharaList),
+     ('/party_make', PartyMake),
      ('/cron', Cron),
      ('/test', PageTest),
     ],

@@ -31,18 +31,27 @@ class User(SsModel):
   u"""ユーザーキャラクターデータ
   """
   name = db.StringProperty(required=True) #  名前
-  lv = db.IntegerProperty(default=1)      #  レベル
-  exp = db.IntegerProperty(default=0) #  経験値
-#     job = db.IntegerProperty()     #  職種（戦士、魔法使い、ハンター）
-  attack = db.IntegerProperty(default=1) #  攻撃力
-  magic = db.IntegerProperty(default=1)  #  魔力
-  speed = db.IntegerProperty(default=1)  #  スピード
+  mail = db.EmailProperty()
 
   @classmethod
-  def get_user(cls, name):
+  def get_user_by_name(cls, name):
     u"""ユーザー名からユーザーデータを取得する
     """
     users = cls.all().filter('name =', name).fetch(1)
+    print dir(users)
+    if users:
+      user = users[0]
+    else:
+      user = cls.add_user(name)
+    user.img = str(user.lv) + '.gif' if user.lv <= 25 else '25.gif'
+
+    return user
+
+  @classmethod
+  def get_user_by_mail(cls, name):
+    u"""mailからユーザーデータを取得する
+    """
+    users = cls.all().filter('mail =', mail).fetch(1)
     print dir(users)
     if users:
       user = users[0]
@@ -177,3 +186,47 @@ class Url(SsModel):
   got = db.BooleanProperty(default=False)
   created_at = db.DateTimeProperty(auto_now_add=True)
   got_at = db.DateTimeProperty()
+
+class Item(SsModel):
+  pass
+
+class Weapon(Item):
+  pass
+
+class Armor(Item):
+  pass
+
+class Accessory(Item):
+  pass
+
+class Skill(Item):
+  pass
+
+class Chara(SsModel):
+  u"""キャラクタ
+  """
+  user = db.UserProperty(required=True)
+  name = db.StringProperty(required=True)
+  sex = db.IntegerProperty(required=True)
+  age = db.IntegerProperty(default=1, required=True)
+  job = db.IntegerProperty(default=1, required=True)
+  lv = db.IntegerProperty(default=1, required=True)
+  hp = db.IntegerProperty(default=10, required=True)
+  attack = db.IntegerProperty(default=1, required=True)
+  gurad = db.IntegerProperty(default=1, required=True)
+  speed = db.IntegerProperty(default=1, required=True)
+  luck = db.IntegerProperty(default=1, required=True)
+  weapon = db.ReferenceProperty(Weapon)
+  armor = db.ReferenceProperty(Armor)
+  accessory = db.ReferenceProperty(Accessory)
+  skill1 = db.ReferenceProperty(Skill, None, 'skill1')
+  skill2 = db.ReferenceProperty(Skill, None, 'skill2')
+  skill3 = db.ReferenceProperty(Skill, None, 'skill3')
+
+class Party(SsModel):
+  u"""
+  """
+  user = db.UserProperty(required=True)
+  chara1 = db.ReferenceProperty(Chara, None, 'chara1')
+  chara2 = db.ReferenceProperty(Chara, None, 'chara2')
+  chara3 = db.ReferenceProperty(Chara, None, 'chara3')
