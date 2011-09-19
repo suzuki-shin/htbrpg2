@@ -60,7 +60,9 @@ class PartyMake(webapp.RequestHandler):
     party_keys = self.request.get('party', allow_multiple = True)
     logging.info(party_keys)
 
-    if len(party_keys) == 0:
+    if len(party_keys) > 3:
+      self.redirect('/')
+    elif len(party_keys) == 0:
       self.redirect('/')
     elif len(party_keys) == 1:
       party = Party(user = user)
@@ -147,6 +149,34 @@ class EntryList(webapp.RequestHandler):
     path = os.path.join(os.path.dirname(__file__), 'entry_list.html')
     self.response.out.write(template.render(path, {'entries': entries}))
 
+class EntryView(webapp.RequestHandler):
+  u"""ダンジョン詳細を表示
+  """
+  def get(self):
+    entry = Entry.get(self.request.get('key'))
+    path = os.path.join(os.path.dirname(__file__), 'entry_view.html')
+    self.response.out.write(template.render(path, {'entry': entry}))
+
+class EntryExplore(webapp.RequestHandler):
+  def get(self):
+    user = users.get_current_user()
+    logging.info(inspect.currentframe().f_lineno)
+    if not user:
+      self.redirect(users.create_login_url(self.request.uri))
+
+    entry = Entry.get(self.request.get('key'))
+    logging.info(entry.url)
+
+    try:
+      logging.info(inspect.currentframe().f_lineno)
+      entry.explore(user)
+    except:
+      logging.info(inspect.currentframe().f_lineno)
+      self.redirect('/chara_list')
+
+    path = os.path.join(os.path.dirname(__file__), 'explore.html')
+    self.response.out.write(template.render(path, {}))
+
 class Cron(webapp.RequestHandler):
   def get(self):
     pass
@@ -160,11 +190,13 @@ class PageTest(webapp.RequestHandler):
     dir(entry)
 
 application = webapp.WSGIApplication(
-    [('/', Index),
+    [('/', EntryList),
 #      ('/user', PageUser),
      ('/htb_api', HtbApi),
      ('/htb_url', HtbUrl),
      ('/entry_list', EntryList),
+     ('/entry_view', EntryView),
+     ('/explore', EntryExplore),
      ('/chara_make', CharaMake),
      ('/chara_list', CharaList),
      ('/party_make', PartyMake),

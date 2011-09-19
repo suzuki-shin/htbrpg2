@@ -16,7 +16,7 @@
 		  {% for e in entries %}
 		  <tr>
 			<td>{{ e.eid }}</td>
-			<td>{{ e.title }}</td>
+			<td><a href="/entry_view?key={{ e.key }}">{{ e.title }}</a></td>
 			<td>{{ e.count }}</td>
 			<td>{{ e.url }}</td>
 		  </tr>

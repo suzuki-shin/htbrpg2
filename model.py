@@ -11,8 +11,8 @@ from django.utils import simplejson as json
 # from google.appengine.ext import webapp
 # from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.ext import db
-# import logging
-# import inspect
+import logging
+import inspect
 #logging.debug(inspect.currentframe().f_lineno)
 from datetime import datetime
 
@@ -27,48 +27,48 @@ class SsModel(db.Model):
     """
     return json.dumps(dict([(attr, getattr(self, attr)) for attr in self._all_properties]))
 
-class User(SsModel):
-  u"""ユーザーキャラクターデータ
-  """
-  name = db.StringProperty(required=True) #  名前
-  mail = db.EmailProperty()
+# class User(SsModel):
+#   u"""ユーザーキャラクターデータ
+#   """
+#   name = db.StringProperty(required=True) #  名前
+#   mail = db.EmailProperty()
 
-  @classmethod
-  def get_user_by_name(cls, name):
-    u"""ユーザー名からユーザーデータを取得する
-    """
-    users = cls.all().filter('name =', name).fetch(1)
-    print dir(users)
-    if users:
-      user = users[0]
-    else:
-      user = cls.add_user(name)
-    user.img = str(user.lv) + '.gif' if user.lv <= 25 else '25.gif'
+#   @classmethod
+#   def get_user_by_name(cls, name):
+#     u"""ユーザー名からユーザーデータを取得する
+#     """
+#     users = cls.all().filter('name =', name).fetch(1)
+#     print dir(users)
+#     if users:
+#       user = users[0]
+#     else:
+#       user = cls.add_user(name)
+#     user.img = str(user.lv) + '.gif' if user.lv <= 25 else '25.gif'
 
-    return user
+#     return user
 
-  @classmethod
-  def get_user_by_mail(cls, name):
-    u"""mailからユーザーデータを取得する
-    """
-    users = cls.all().filter('mail =', mail).fetch(1)
-    print dir(users)
-    if users:
-      user = users[0]
-    else:
-      user = cls.add_user(name)
-    user.img = str(user.lv) + '.gif' if user.lv <= 25 else '25.gif'
+#   @classmethod
+#   def get_user_by_mail(cls, name):
+#     u"""mailからユーザーデータを取得する
+#     """
+#     users = cls.all().filter('mail =', mail).fetch(1)
+#     print dir(users)
+#     if users:
+#       user = users[0]
+#     else:
+#       user = cls.add_user(name)
+#     user.img = str(user.lv) + '.gif' if user.lv <= 25 else '25.gif'
 
-    return user
+#     return user
 
-  @classmethod
-  def add_user(cls, name):
-    u"""ユーザーデータを登録する
-    """
-    user = cls(name = name)
-    user.put()
+#   @classmethod
+#   def add_user(cls, name):
+#     u"""ユーザーデータを登録する
+#     """
+#     user = cls(name = name)
+#     user.put()
 
-    return user
+#     return user
 
 
 class Entry(SsModel):
@@ -133,17 +133,33 @@ class Entry(SsModel):
 
     return entry
 
-  def explore(self, user):
-    u"""
-    """
-    bookmarks = self.get_bookmarks()
+#   def explore(self, user):
+#     u"""
+#     """
+#     logging.info(inspect.currentframe().f_lineno)
+#     bookmarks = self.get_bookmarks()
 
-    return bookmarks
+#     logging.info(inspect.currentframe().f_lineno)
+
+#     return bookmarks
 
   def get_bookmarks(self):
     u"""
     """
     return Bookmark.get_bookmarks(self)
+
+  def explore(self, user):
+    u"""冒険にでる
+    """
+    logging.info(inspect.currentframe().f_lineno)
+    party = Party.get_party(user)
+    logging.info(party.user)
+    explore = Explore(
+      user  = user,
+      entry = self,
+      party = party
+    )
+    explore.put()
 
 class Bookmark(SsModel):
   u"""はてぶエントリーページについてるブックマーク（モンスターとみなす）
@@ -230,3 +246,27 @@ class Party(SsModel):
   chara1 = db.ReferenceProperty(Chara, None, 'chara1')
   chara2 = db.ReferenceProperty(Chara, None, 'chara2')
   chara3 = db.ReferenceProperty(Chara, None, 'chara3')
+
+  @classmethod
+  def get_party(cls, user):
+
+    logging.info(inspect.currentframe().f_lineno)
+    logging.info(user.email)
+    logging.info(dir(user))
+
+    parties = cls.all().filter('user =', user).fetch(1)
+
+    logging.info(parties[0].chara1.name)
+
+    if not parties[0]:
+      raise "No Party Error"
+
+    return parties[0]
+
+class Explore(SsModel):
+  u"""
+  """
+  user  = db.UserProperty(required=True)
+  entry = db.ReferenceProperty(Entry, required=True)
+  party = db.ReferenceProperty(Party, required=True)
+  created = db.DateTimeProperty(auto_now_add=True)

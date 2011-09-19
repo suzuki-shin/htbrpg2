@@ -1,0 +1,21 @@
+<html>
+  {% include "header.html" %}
+  <body>
+	<div id="container">
+	  <div id="header">
+		<h1><a href="/">GYMMEMO</a></h1>
+	  </div>
+	  <div id="content">
+		<table>
+		  <tr>
+			<th>{{ entry.eid }}</th>
+			<th><a href="/explore?key={{ entry.key }}">{{ entry.title }}</a></th>
+			<th>{{ entry.count }}</th>
+			<th>{{ entry.url }}</th>
+		  </tr>
+		</table>
+	  </div>
+	</div>
+	{% include "footer.html" %}
+  </body>
+</html>
