@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
-# import random
+import random
 import urllib
 #import json
 from django.utils import simplejson as json
@@ -133,16 +133,6 @@ class Entry(SsModel):
 
     return entry
 
-#   def explore(self, user):
-#     u"""
-#     """
-#     logging.info(inspect.currentframe().f_lineno)
-#     bookmarks = self.get_bookmarks()
-
-#     logging.info(inspect.currentframe().f_lineno)
-
-#     return bookmarks
-
   def get_bookmarks(self):
     u"""
     """
@@ -193,7 +183,10 @@ class Bookmark(SsModel):
     """
     bookmarks = cls.all().filter('entry =', entry).fetch(100)
 
-    return json.dumps(bookmarks)
+    return bookmarks
+
+  def get_power(self):
+    return random.randint(1, 6)
 
 class Url(SsModel):
   u"""ダンジョンにするためのurlを入れておく
@@ -263,10 +256,69 @@ class Party(SsModel):
 
     return parties[0]
 
+  def get_power(self):
+    return random.randint(1, 10)
+
+
 class Explore(SsModel):
   u"""
   """
-  user  = db.UserProperty(required=True)
+  user = db.UserProperty(required=True)
   entry = db.ReferenceProperty(Entry, required=True)
   party = db.ReferenceProperty(Party, required=True)
-  created = db.DateTimeProperty(auto_now_add=True)
+  created_at = db.DateTimeProperty(auto_now_add=True)
+  finished = db.BooleanProperty(required=True, default=False)
+  finished_at = db.DateTimeProperty()
+
+  def do(self):
+    u"""
+    """
+    bookmarks = self.entry.get_bookmarks()
+    logging.info(bookmarks)
+    win = True
+    for b in bookmarks:
+      battle = self.battle(b)
+      win = battle.win
+      if not win:
+        break
+
+    return win
+
+  def battle(self, bookmark):
+    u"""
+    """
+    p_power = self.party.get_power()
+    b_power = bookmark.get_power()
+    battle = Battle(
+      user           = self.user,
+      explore        = self,
+      entry          = self.entry,
+      party          = self.party,
+      bookmark       = bookmark,
+      party_power    = p_power,
+      bookmark_power = b_power,
+      win            = p_power > b_power,
+    )
+    battle.put()
+    self.finished = True
+    self.put()
+
+    return battle
+
+  def get_battles(self):
+    u"""
+    """
+    return Battle.all().filter('explore = ', self).fetch(100)
+
+class Battle(SsModel):
+  u"""戦闘履歴
+  """
+  user  = db.UserProperty(required=True)
+  explore = db.ReferenceProperty(Explore, required=True)
+  entry = db.ReferenceProperty(Entry, required=True)
+  party = db.ReferenceProperty(Party, required=True)
+  bookmark = db.ReferenceProperty(Bookmark, required=True)
+  created_at = db.DateTimeProperty(auto_now_add=True)
+  party_power = db.IntegerProperty()
+  bookmark_power = db.IntegerProperty()
+  win = db.BooleanProperty(required=True)

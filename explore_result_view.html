@@ -1,0 +1,31 @@
+<html>
+  {% include "header.html" %}
+  <body>
+	<div id="container">
+	  <div id="header">
+		<h1><a href="/">GYMMEMO</a></h1>
+	  </div>
+	  <div id="content">
+		<table>
+		  <tr>
+			<th>win</th>
+			<th>monster</th>
+			<th>chara1</th>
+			<th>chara2</th>
+			<th>chara3</th>
+		  </tr>
+		  {% for b in battles %}
+		  <tr>
+			<td>{{ b.win }}</td>
+			<td>{{ b.bookmark.user }}</td>
+			<td>{{ b.party.chara1.name }}</td>
+			<td>{{ b.party.chara2.name }}</td>
+			<td>{{ b.party.chara3.name }}</td>
+		  </tr>
+		{% endfor %}
+		</table>
+	  </div>
+	</div>
+	{% include "footer.html" %}
+  </body>
+</html>

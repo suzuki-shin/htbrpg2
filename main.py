@@ -177,6 +177,38 @@ class EntryExplore(webapp.RequestHandler):
     path = os.path.join(os.path.dirname(__file__), 'explore.html')
     self.response.out.write(template.render(path, {}))
 
+class ExploreDo(webapp.RequestHandler):
+  u""" 冒険登録されているデータを実行する。cronでまわす 
+  """
+  def get(self):
+    explores = Explore.all().filter('finished =', False).fetch(10)
+    for e in explores:
+      e.do()
+
+    self.redirect('/')
+
+class ExploreResultList(webapp.RequestHandler):
+  u""" 冒険結果表示
+  """
+  def get(self):
+    user = users.get_current_user()
+    explores = Explore.all().filter('user =', user).filter('finished =', True).fetch(10)
+
+    path = os.path.join(os.path.dirname(__file__), 'explore_result_list.html')
+    self.response.out.write(template.render(path, {'explores': explores}))
+
+class ExploreResultView(webapp.RequestHandler):
+  u""" 冒険結果表示
+  """
+  def get(self):
+    user = users.get_current_user()
+    explore = Explore.get(self.request.get('key'))
+    battles = explore.get_battles()
+
+    path = os.path.join(os.path.dirname(__file__), 'explore_result_view.html')
+    self.response.out.write(template.render(path, {'explore': explore,
+                                                   'battles': battles}))
+
 class Cron(webapp.RequestHandler):
   def get(self):
     pass
@@ -190,16 +222,19 @@ class PageTest(webapp.RequestHandler):
     dir(entry)
 
 application = webapp.WSGIApplication(
-    [('/', EntryList),
+    [('/', EntryList),                  # ダンジョンリスト 
 #      ('/user', PageUser),
      ('/htb_api', HtbApi),
      ('/htb_url', HtbUrl),
-     ('/entry_list', EntryList),
-     ('/entry_view', EntryView),
-     ('/explore', EntryExplore),
-     ('/chara_make', CharaMake),
-     ('/chara_list', CharaList),
-     ('/party_make', PartyMake),
+     ('/entry_list', EntryList),        # ダンジョンリスト
+     ('/entry_view', EntryView),        # ダンジョン詳細 
+     ('/explore', EntryExplore),        # 指定したダンジョンに冒険に出る 
+     ('/explore_do', ExploreDo),        # すでに出ている冒険を処理する（cron） 
+     ('/explore_result_list', ExploreResultList), # 冒険結果
+     ('/explore_result_view', ExploreResultView), # 冒険結果
+     ('/chara_make', CharaMake),        # キャラ作成 
+     ('/chara_list', CharaList),        # キャラリスト 
+     ('/party_make', PartyMake),        # パーティ作成
      ('/cron', Cron),
      ('/test', PageTest),
     ],
@@ -210,3 +245,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

@@ -1,0 +1,25 @@
+<html>
+  {% include "header.html" %}
+  <body>
+	<div id="container">
+	  <div id="header">
+		<h1><a href="/">GYMMEMO</a></h1>
+	  </div>
+	  <div id="content">
+		<table>
+		  <tr>
+			<th>title</th>
+			<th>created</th>
+		  </tr>
+		  {% for e in explores %}
+		  <tr>
+			<td><a href="/explore_result_view?key={{ e.key }}">{{ e.entry.title }}</a></td>
+			<td>{{ e.created }}</td>
+		  </tr>
+		{% endfor %}
+		</table>
+	  </div>
+	</div>
+	{% include "footer.html" %}
+  </body>
+</html>
